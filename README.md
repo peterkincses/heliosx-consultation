@@ -1,10 +1,24 @@
 This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
 
+System requirements
+Node.js 18.18 or later.
+macOS, Windows (including WSL), and Linux are supported.
+
 ## Getting Started
+
+#### System requirements
+```bash
+Node.js 18.18 or later.
+macOS, Windows (including WSL), and Linux are supported.
+```
 
 First, run the development server:
 
 ```bash
+npm install
+# or
+yarn intall
+# then
 npm run dev
 # or
 yarn dev
@@ -13,6 +27,29 @@ pnpm dev
 # or
 bun dev
 ```
+
+Landing page (available consultations marked with the "Available label")               
+```bash
+http://localhost:3000/healthcare/consultation/
+```
+
+Example consultation pages: 
+```bash
+http://localhost:3000/healthcare/consultation/hay-fever
+http://localhost:3000/healthcare/consultation/migraine
+```
+
+ Used sessionstorage to save data instead of localStorage - session clears when the tab is closed which I find safer                       
+
+                          
+                   
+ ![Screenshot 2025-02-06 at 09 32 56](https://github.com/user-attachments/assets/350eacde-7a4b-4af7-aa14-dc04df84d8e6)
+
+ ![Screenshot 2025-02-06 at 09 33 16](https://github.com/user-attachments/assets/d056d0a1-6105-4671-8918-9b395859d6bc)
+
+
+
+
 
 Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
 

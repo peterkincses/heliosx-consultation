@@ -14,7 +14,6 @@ export const useConsultationForm = ({
 }) => {
     const router = useRouter();
 
-    const [step, setStep] = useState<number>(0);
     const [formData, setFormData] = useState<{
         answers: { [key: string]: { value: string | boolean; error: string | null } };
         currentStep: number;
@@ -27,6 +26,8 @@ export const useConsultationForm = ({
     const [questions, setQuestions] = useState<Question[]>([]);
     const [loading, setLoading] = useState<boolean>(true);
 
+    const {currentStep, answers} = formData;
+
     useEffect(() => {
         const fetchQuestions = async () => {
             try {
@@ -37,7 +38,6 @@ export const useConsultationForm = ({
                     const formData = sessionStorage.getItem(`consultation-${slug}`);
                     if (formData) {
                         setFormData(JSON.parse(formData));
-                        setStep(JSON.parse(formData).currentStep);
                     } else {
                         setFormData({
                             answers: data.reduce(
@@ -55,6 +55,7 @@ export const useConsultationForm = ({
                 }
             } catch (err) {
                 setErrorMessage("Something went wrong.");
+                console.log(err)
             } finally {
                 setLoading(false);
             }
@@ -66,15 +67,14 @@ export const useConsultationForm = ({
         if (formData?.answers && Object.keys(formData?.answers).length > 0) {
             sessionStorage.setItem(`consultation-${slug}`, JSON.stringify(formData));
             setCanSubmit(
-                questions.length === Object.values(formData.answers).length &&
-                Object.values(formData.answers).every((answer) => answer.value !== undefined && answer.error === null)
+                questions.length === Object.values(answers).length &&
+                Object.values(answers).every((answer) => answer.value !== null && answer.error === null)
             );
         }
-    }, [formData, slug])
+    }, [formData, slug, questions.length])
 
     const handleNext = () => {
-        if (step < questions.length - 1) {
-            setStep((prev) => prev + 1);
+        if (currentStep < questions.length - 1) {
             setFormData((prev) => ({
                 ...prev,
                 currentStep: prev.currentStep + 1,
@@ -83,8 +83,7 @@ export const useConsultationForm = ({
     }
 
     const handlePrev = () => {
-        if (step > 0) {
-            setStep((prev) => prev - 1);
+        if (currentStep > 0) {
             setFormData((prev) => ({
                 ...prev,
                 currentStep: prev.currentStep - 1,
@@ -93,7 +92,7 @@ export const useConsultationForm = ({
     }
 
     const setValue = (id: string, value: boolean) => {
-        const isCorrectAnswer = questions[step].correctAnswer === value;
+        const isCorrectAnswer = questions[currentStep].correctAnswer === value;
         setFormData((prev) => ({
             ...prev, 
             answers: {
@@ -109,9 +108,14 @@ export const useConsultationForm = ({
     const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
         e.preventDefault();
         setLoading(true);
+        
+        const transformedAnswers = Object.entries(answers).map(([key, { value }]) => ({
+            [key]: value
+        }));
+
         const response = await handleConsultationFormSubmission({
             slug,
-            formData,
+            formData: transformedAnswers,
         });
 
         if (response.success) {
@@ -132,7 +136,7 @@ export const useConsultationForm = ({
     console.log("formData", formData)
 
     return {
-        step,
+        step: currentStep,
         canSubmit,
         errorMessage,
         formData,

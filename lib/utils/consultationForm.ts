@@ -1,5 +1,3 @@
-import { useRouter } from "next/router";
-
 export const handleConsultationFormSubmission = async (answers: any) => {
     let success = false;
     console.log(answers);

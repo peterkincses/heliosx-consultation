@@ -15,5 +15,11 @@ export async function GET(req: Request) {
     // Filter questions based on the slug
     const filteredQuestions = questions.filter(q => q.category === slug);
 
-    return NextResponse.json(filteredQuestions);
+    // Set cache-control header (cache for 10 minutes)
+    const headers = new Headers({
+        //"Cache-Control": "public, max-age=600, stale-while-revalidate=300", // Cache for 10 minutes
+        "Cache-Control": "public, max-age=86400, immutable", // Cache for 1 day
+    });
+
+    return NextResponse.json(filteredQuestions, {headers});
 }

@@ -1,7 +1,7 @@
 "use client";
 
 import { Question } from "@/data/consultationQuestions";
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { handleConsultationFormSubmission } from "../utils/consultationForm";
 import { useRouter } from "next/navigation";
 
@@ -63,75 +63,81 @@ export const useConsultationForm = ({
         fetchQuestions()
     }, [slug]);
 
+    const isFormValid = useCallback(() => {
+        return (
+            questions.length > 0 &&
+            questions.length === Object.values(answers).length &&
+            Object.values(answers).every((answer) => answer.value !== null && answer.error === null)
+        );
+    }, [answers, questions.length]);
+
     useEffect(() => {
-        if (formData?.answers && Object.keys(formData?.answers).length > 0) {
-            sessionStorage.setItem(`consultation-${slug}`, JSON.stringify(formData));
-            setCanSubmit(
-                questions.length === Object.values(answers).length &&
-                Object.values(answers).every((answer) => answer.value !== null && answer.error === null)
-            );
-        }
-    }, [formData, slug, questions.length])
+        if (Object.keys(answers).length === 0) return;
+        sessionStorage.setItem(`consultation-${slug}`, JSON.stringify(formData));
+        setCanSubmit(isFormValid());
 
-    const handleNext = () => {
-        if (currentStep < questions.length - 1) {
-            setFormData((prev) => ({
-                ...prev,
-                currentStep: prev.currentStep + 1,
-            }));
-        }
-    }
+    }, [answers, formData, isFormValid, slug]);
 
-    const handlePrev = () => {
-        if (currentStep > 0) {
-            setFormData((prev) => ({
-                ...prev,
-                currentStep: prev.currentStep - 1,
-            }));
-        }
-    }
+    const handleNext = useCallback(() => {
+        setFormData((prev) => {
+            if (prev.currentStep < questions.length - 1) {
+                return { ...prev, currentStep: prev.currentStep + 1 };
+            }
+            return prev;
+        });
+    }, [questions])
 
-    const setValue = (id: string, value: boolean) => {
-        const isCorrectAnswer = questions[currentStep].correctAnswer === value;
+    const handlePrev = useCallback(() => {
+        setFormData((prev) => {
+            if (prev.currentStep > 0) {
+                return { ...prev, currentStep: prev.currentStep - 1 };
+            }
+            return prev;
+        });
+    }, []);
+
+    const setValue = useCallback((question: Question, value: boolean) => {
         setFormData((prev) => ({
             ...prev, 
             answers: {
                 ...prev.answers,
-                [id]: {
+                [question.id]: {
                     value,
-                    error: isCorrectAnswer ? null : defaultErrorMessage
+                    error: question.correctAnswer === value ? null : defaultErrorMessage
                 },
             },
         }));
-    }
+    }, [])
 
     const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
         e.preventDefault();
         setLoading(true);
-        
-        const transformedAnswers = Object.entries(answers).map(([key, { value }]) => ({
-            [key]: value
-        }));
+        setErrorMessage(""); // Clear previous errors
 
-        const response = await handleConsultationFormSubmission({
-            slug,
-            formData: transformedAnswers,
-        });
+        try {
+            const transformedAnswers = Object.fromEntries(
+                Object.entries(answers).map(([key, { value }]) => [key, value])
+            );
 
-        if (response.success) {
-            setFormData({answers: {}, currentStep: 0}) // clear form data
-            sessionStorage.removeItem(`consultation-${slug}`); // clear session storage
-            setLoading(false);
-            console.log(response.message);
-            router.push("/healthcare/consultation/thank-you");
-            return
-        } else {
-            setErrorMessage(response.message);
-            setLoading(false);
+            const response = await handleConsultationFormSubmission({
+                slug,
+                formData: transformedAnswers,
+            });
+
+            if (response.success) {
+                setFormData({ answers: {}, currentStep: 0 }); // Reset form
+                sessionStorage.removeItem(`consultation-${slug}`); // Clear session storage
+                router.push("/healthcare/consultation/thank-you");
+            } else {
+                setErrorMessage(response.message);
+            }
+        } catch (error) {
+            console.error("Submission error:", error);
+            setErrorMessage("An unexpected error occurred. Please try again.");
+        } finally {
+            setLoading(false); // Ensure loading state is cleared in all cases
         }
-
-        alert(response.message); // error message - use toast or modal instead of basic alert or use setErrorMessage
-    }
+    };
 
     console.log("formData", formData)
 

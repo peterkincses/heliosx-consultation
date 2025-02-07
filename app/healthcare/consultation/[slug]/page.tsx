@@ -84,7 +84,7 @@ export default function Consultation() {
                                             value="true"
                                             checked={currentAnswer?.value === true}
                                             className="mr-2"
-                                            onChange={() => setValue(currentQuestion.id, true)}
+                                            onChange={() => setValue(currentQuestion, true)}
                                         />
                                         Yes
                                     </label>
@@ -95,7 +95,7 @@ export default function Consultation() {
                                             value="false"
                                             checked={currentAnswer?.value === false}
                                             className="mr-2"
-                                            onChange={() => setValue(currentQuestion.id, false)}
+                                            onChange={() => setValue(currentQuestion, false)}
                                         />
                                         No
                                     </label>
